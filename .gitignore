@@ -1,0 +1,26 @@
+ECHO is on.
+# קבצים ותיקיות של Visual Studio
+.vs/
+*.user
+*.suo
+*.ipch
+*.db
+*.obj
+*.exe
+*.pdb
+*.idb
+*.opendb
+*.VC.db
+
+# תיקיות ביניים ותפוקה
+bin/
+obj/
+Build/
+
+# קבצי לוג
+*.log
+
+# קבצי מערכת
+.DS_Store
+Thumbs.db
+
