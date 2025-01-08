@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace CacheProject
 {
@@ -10,13 +12,19 @@ namespace CacheProject
     {
         static void Main(string[] args)
         {
-            var cache = new Cache("C:\\Users\\User\\Desktop\\CacheProject\\CacheProject\\CacheJson\\cache.json");
 
             Console.WriteLine("Welcome to the Cache Program!");
 
+            string cacheFilePath = InitializeCache();
+
+            Console.WriteLine($"Cache file is located at: {cacheFilePath}");
+
+
+            var cache = new Cache(cacheFilePath);
+
             while (true)
             {
-                Console.WriteLine("\nChoose an option:");
+                Console.WriteLine("Choose an option:");
                 Console.WriteLine("1. Add to Cache");
                 Console.WriteLine("2. Get from Cache");
                 Console.WriteLine("3. Update Cache");
@@ -27,17 +35,17 @@ namespace CacheProject
 
                 switch (choice)
                 {
-                    case "1": // Add to cache
+                    case "1": // הוספה לcache
                         Console.Write("Enter key: ");
                         string key = Console.ReadLine();
 
                         Console.Write("Enter value: ");
                         string value = Console.ReadLine();
 
-                        cache.Add(key, value); // Add with default TTL 60 seconds
+                        cache.Add(key, value);
                         break;
 
-                    case "2": // Get from cache
+                    case "2": // קבלה 
                         Console.Write("Enter key: ");
                         string getKey = Console.ReadLine();
 
@@ -48,7 +56,7 @@ namespace CacheProject
                             Console.WriteLine("Key not found or expired.");
                         break;
 
-                    case "3": // Update cache
+                    case "3": // עדכון 
                         Console.Write("Enter key to update: ");
                         string updateKey = Console.ReadLine();
 
@@ -58,7 +66,7 @@ namespace CacheProject
                         cache.Update(updateKey, newValue);
                         break;
 
-                    case "4": // Remove from cache
+                    case "4": // מחיקה
                         Console.Write("Enter key to remove: ");
                         string removeKey = Console.ReadLine();
 
@@ -73,6 +81,43 @@ namespace CacheProject
                         Console.WriteLine("Invalid option. Try again.");
                         break;
                 }
+            }
+        }
+        static string InitializeCache()
+        {
+            // קבלת נתיב לשולחן העבודה של המשתמש
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+            // יצירת נתיב לתיקייה ול-JSON
+            string projectPath = Path.Combine(desktopPath, "CacheProject", "CacheJson");
+            string cacheFilePath = Path.Combine(projectPath, "cache.json");
+
+            // יצירת תיקיות אם הן אינן קיימות
+            EnsureDirectoryExists(projectPath);
+
+            // יצירת קובץ JSON אם אינו קיים
+            EnsureFileExists(cacheFilePath);
+
+            return cacheFilePath;
+        }
+
+        // פונקציה שמוודאת שהתיקייה קיימת
+        static void EnsureDirectoryExists(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+                Console.WriteLine($"Created directory at: {path}");
+            }
+        }
+
+        // פונקציה שמוודאת שהקובץ קיים
+        static void EnsureFileExists(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                File.WriteAllText(filePath, "[]");
+                Console.WriteLine($"Created cache file at: {filePath}");
             }
         }
     }

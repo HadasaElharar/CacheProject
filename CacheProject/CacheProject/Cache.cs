@@ -12,7 +12,9 @@ namespace CacheProject
     internal class Cache
     {
         private readonly ConcurrentDictionary<string, CacheItem> _cache = new ConcurrentDictionary<string, CacheItem>();
+
         private readonly string _filePath;
+
         const int ttlInMinutes = 30;
         public Cache(string filePath)
         {
@@ -152,20 +154,36 @@ namespace CacheProject
             if (!File.Exists(_filePath))
                 return;
 
-            var data = File.ReadAllText(_filePath);
-            var items = JsonSerializer.Deserialize<List<CacheItem>>(data);
-
-            if (items != null)
+            try
             {
-                foreach (var item in items)
+                var data = File.ReadAllText(_filePath);
+
+                // אם הקובץ ריק, נשתמש ברשימה ריקה
+                if (string.IsNullOrWhiteSpace(data))
                 {
-                    if (!item.IsExpired())
+                    data = "[]";
+                }
+
+                var items = JsonSerializer.Deserialize<List<CacheItem>>(data);
+
+                if (items != null)
+                {
+                    foreach (var item in items)
                     {
-                        _cache[item.Key] = item;
+                        if (!item.IsExpired())
+                        {
+                            _cache[item.Key] = item;
+                        }
                     }
                 }
             }
-
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Error reading JSON file: {ex.Message}");
+            }
         }
+
+
     }
-    }
+}
+    
