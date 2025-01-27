@@ -81,7 +81,9 @@ namespace CacheProject
                         Console.WriteLine("Invalid option. Try again.");
                         break;
                 }
+
             }
+            cache.Dispose();
         }
         static string InitializeCache()
         {
@@ -120,5 +122,7 @@ namespace CacheProject
                 Console.WriteLine($"Created cache file at: {filePath}");
             }
         }
+
     }
+
 }

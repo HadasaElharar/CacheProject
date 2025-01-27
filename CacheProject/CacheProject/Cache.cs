@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System.IO;
+using System.Timers;
 
 namespace CacheProject
 {
@@ -15,18 +16,23 @@ namespace CacheProject
 
         private readonly string _filePath;
 
-        const int ttlInMinutes = 30;
-        public Cache(string filePath)
+        private readonly Timer _cleanupTimer;
+
+        public Cache(string filePath, double cleanupIntervalInSeconds = 60)
         {
             _filePath = filePath;
 
             // טוען נתונים קיימים מהקובץ (אם קיים)
             LoadFromFile();
+
+            _cleanupTimer = new Timer(cleanupIntervalInSeconds * 1000); //ממיר שניות למילישניות
+            _cleanupTimer.Elapsed += (sender, args) => RemoveExpiredItems();
+            _cleanupTimer.Start();
         }
-        public void Add(string key, object value)
+        public void Add(string key, object value, int ttlInMinutes = 5)
         {
 
-            RemoveExpiredItems();
+            
             if (_cache.ContainsKey(key))
             {
                 Console.WriteLine($"Key '{key}' already exists.");
@@ -79,14 +85,14 @@ namespace CacheProject
                 return null;
             }
         }
-        public void Update(string key, object newValue)
+        public void Update(string key, object newValue, int ttlInMinutes = 5)
         {
             // בודקים אם ה-key קיים במילון
             if (_cache.TryGetValue(key, out var item))
             {
                 // מעדכנים את הערך ואת זמן התפוגה
                 item.Value = newValue;
-                item.Expiration = DateTime.Now.AddSeconds(ttlInMinutes);
+                item.Expiration = DateTime.Now.AddMinutes(ttlInMinutes);
 
                 // מעדכנים את המילון
                 _cache[key] = item;
@@ -117,28 +123,18 @@ namespace CacheProject
         private void RemoveExpiredItems()
         {
             // מציאת כל המפתחות של פריטים שפג תוקפם
-            var keysToRemove = new List<string>();
+            var expiredKeys = _cache
+            .Where(pair => pair.Value.IsExpired())
+            .Select(pair => pair.Key)
+            .ToList();
 
-            foreach (var key in _cache.Keys)
+            foreach (var key in expiredKeys)
             {
-                var item = _cache[key];
-                if (item.IsExpired())
-                {
-                    keysToRemove.Add(key);
-                }
+                _cache.TryRemove(key, out _);
+                Console.WriteLine($"Removed expired item: {key}");
             }
 
-            // הסרת כל המפתחות שפג תוקפם
-            foreach (var key in keysToRemove)
-            {
-                if (_cache.TryRemove(key, out _))
-                {
-                    Console.WriteLine($"Key '{key}' has been removed as it is expired.");
-                }
-            }
-
-            // אם היו פריטים שהוסרו, נעדכן את הקובץ
-            if (keysToRemove.Count > 0)
+            if (expiredKeys.Any())
             {
                 SaveToFile();
             }
@@ -147,6 +143,10 @@ namespace CacheProject
         {
             var data = JsonSerializer.Serialize(_cache.Values, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_filePath, data);
+        }
+        public void Dispose()
+        {
+            _cleanupTimer?.Dispose();
         }
 
         public void LoadFromFile()
